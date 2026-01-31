@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-              EnerGrid
+              Energy Grid
             </h3>
             <p className="text-slate-400 text-sm">
               Empowering the future with smart energy management and real-time analytics.
