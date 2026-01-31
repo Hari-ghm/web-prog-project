@@ -1,7 +1,8 @@
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <h1>Home</h1>
+    <div>
+      <h1>WP Project Structure Ready</h1>
+      <p>This is the placeholder text you requested.</p>
     </div>
   );
 }
