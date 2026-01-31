@@ -14,6 +14,7 @@ export default function Navbar() {
     { name: 'Reports', href: '/reports' },
     { name: 'Alerts', href: '/alerts' },
     { name: 'Settings', href: '/settings' },
+    { name: 'Admin', href: '/admin/sources' },
   ];
 
   return (
