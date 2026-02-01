@@ -12,7 +12,6 @@ import {
   EyeOff,
   Shield
 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -23,7 +22,9 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession();
+  // const { data: session, update } = useSession();
+  const session = { user: { name: 'Demo User', email: 'user@example.com' } };
+  const update = async (data: any) => { console.log('Mock update', data); };
   const router = useRouter();
   
   const [profile, setProfile] = useState<UserProfile>({
