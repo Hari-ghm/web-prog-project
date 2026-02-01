@@ -6,7 +6,7 @@ export default function AlertsPage() {
     { id: 4, severity: 'Critical', title: 'Battery Degradation', message: 'Storage Unit 3 reported health below 60%.', time: '1 day ago' },
     { id: 5, severity: 'Warning', title: 'Voltage Fluctuation', message: 'Detected unstable voltage in Substation Alpha.', time: '1 day ago' },
   ];
-
+//hi guyss
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-white mb-8">System Alerts</h1>
