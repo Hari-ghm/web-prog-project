@@ -1,18 +1,36 @@
-export default function DashboardPage() {
-  const stats = [
-    { name: 'Total Energy Output', value: '45.2 kWh', change: '+12%', type: 'positive' },
-    { name: 'Active Sources', value: '8/10', change: '2 Offline', type: 'warning' },
-    { name: 'Efficiency Rating', value: '94%', change: '+2.5%', type: 'positive' },
-    { name: 'Active Alerts', value: '3', change: 'Action Required', type: 'negative' },
-  ];
+'use client';
+import { useState, useEffect } from 'react';
 
-  const activities = [
-    { id: 1, source: 'Solar Panel Array A', event: 'Output dropped below 50%', time: '10 mins ago', status: 'Warning' },
-    { id: 2, source: 'Wind Turbine 3', event: 'Maintenance completed', time: '1 hour ago', status: 'Success' },
-    { id: 3, source: 'Main Grid Connection', event: 'Synchronization optimized', time: '2 hours ago', status: 'Info' },
-    { id: 4, source: 'Backup Battery', event: 'Self-test passed', time: '4 hours ago', status: 'Success' },
-    { id: 5, source: 'Solar Panel Array B', event: 'Peak efficiency reached', time: '5 hours ago', status: 'Success' },
-  ];
+export default function DashboardPage() {
+  const [stats, setStats] = useState([
+    { name: 'Total Energy Output', value: '...', change: '...', type: 'positive' },
+    { name: 'Active Sources', value: '...', change: '...', type: 'warning' },
+    { name: 'Efficiency Rating', value: '...', change: '...', type: 'positive' },
+    { name: 'Active Alerts', value: '...', change: '...', type: 'negative' },
+  ]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        setStats(data.stats);
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchStats();
+
+    // Set up polling every 3 seconds
+    const intervalId = setInterval(fetchStats, 3000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const activities: any[] = [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -43,10 +61,10 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chart Area Placeholder */}
-        <div className="lg:col-span-2 rounded-xl bg-slate-900 border border-slate-800 p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Energy Consumption Trend</h2>
-          <div className="h-80 w-full bg-slate-950/50 rounded-lg flex items-center justify-center border border-slate-800 border-dashed">
-            <p className="text-slate-500">Chart Visualization Placeholder</p>
+        <div className="lg:col-span-2 rounded-xl bg-slate-900 border border-slate-800 p-6 flex flex-col">
+          <h2 className="text-xl font-semibold text-white mb-4">Facility Overview</h2>
+          <div className="flex-1 min-h-[320px] w-full bg-slate-950/50 rounded-lg flex items-center justify-center border border-slate-800 border-dashed overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=1200" alt="Facility Overview" className="w-full h-full object-cover rounded-lg" />
           </div>
         </div>
 

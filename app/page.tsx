@@ -13,7 +13,7 @@ export default function Home() {
             Smart Energy Management <br /> for a Sustainable Future
           </h1>
           <p className="mt-4 text-xl text-slate-400 max-w-3xl mx-auto mb-10">
-            Monitor, analyze, and optimize your energy consumption with real-time data and AI-driven insights. Join the revolution in energy efficiency.
+            Monitor, analyze, and optimize your energy consumption with real-time data and actionable insights. Join the revolution in energy efficiency.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 
@@ -22,12 +22,14 @@ export default function Home() {
             >
               Get Started
             </Link>
+          
             <Link 
               href="/dashboard" 
               className="px-8 py-4 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-lg border border-slate-700 transition-all"
             >
-              Live Demo
+              Dashboard
             </Link>
+            
           </div>
         </div>
       </section>
@@ -45,29 +47,31 @@ export default function Home() {
               {
                 title: "Real-time Monitoring",
                 desc: "Track energy usage as it happens with sub-second latency.",
-                icon: "⚡"
+                imagePlaceholder: "https://media.istockphoto.com/id/152131833/photo/control-room.jpg?s=612x612&w=0&k=20&c=8EOxs7tXetLcEc9UhV3k2IB5sJLpKD2D78QtJGqTFXY="
               },
               {
-                title: "Predictive Analytics",
-                desc: "AI-powered forecasts to prevent outages and optimize cost.",
-                icon: "📊"
+                title: "Data Analytics",
+                desc: "Data-driven forecasts to prevent outages and optimize cost.",
+                imagePlaceholder: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000"
               },
               {
                 title: "Green Integration",
                 desc: "Seamlessly manage solar, wind, and traditional power sources.",
-                icon: "🌱"
+                imagePlaceholder: "https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=1000"
               }
             ].map((feature, idx) => (
-              <div key={idx} className="p-8 rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition-all group">
-                <div className="text-4xl mb-6 group-hover:scale-110 transition-transform duration-300 transform origin-left">
-                  {feature.icon}
+              <div key={idx} className="flex flex-col overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition-all group">
+                <div className="h-48 w-full bg-slate-800 relative flex items-center justify-center border-b border-slate-800 overflow-hidden">
+                  <img src={feature.imagePlaceholder} alt={feature.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-blue-400 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-400 leading-relaxed">
-                  {feature.desc}
-                </p>
+                <div className="p-8">
+                  <h3 className="text-xl font-semibold text-white mb-3 group-hover:text-blue-400 transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-slate-400 leading-relaxed">
+                    {feature.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
