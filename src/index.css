@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-lightPrimary text-textPrimary font-sans antialiased transition-colors duration-200 dark:bg-darkPrimary dark:text-darkTextPrimary;
+  }
+}
+
+@layer components {
+  .card-base {
+    @apply bg-white rounded-[12px] shadow-sm border border-borderLight dark:bg-darkSecondary dark:border-gray-700 transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-teal text-white rounded-[8px] hover:bg-teal/90 transition-colors shadow-sm;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-gray-100 text-textPrimary rounded-[8px] hover:bg-gray-200 dark:bg-gray-800 dark:text-darkTextPrimary dark:hover:bg-gray-700 border border-borderLight dark:border-gray-700 transition-colors shadow-sm;
+  }
+
+  .nav-link {
+    @apply px-4 py-3 rounded-[8px] text-textSecondary dark:text-darkTextSecondary hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-navy dark:hover:text-white transition-all duration-200 font-medium cursor-pointer;
+  }
+
+  .nav-link-active {
+    @apply px-4 py-3 rounded-[8px] bg-teal/10 text-teal dark:bg-teal/20 dark:text-teal font-semibold transition-all duration-200 cursor-pointer;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
