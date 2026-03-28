@@ -1,74 +1,146 @@
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-  return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+  const { user, token, loading: authLoading } = useAuth();
+  const router = useRouter();
 
-      <div className="space-y-6">
-        {/* Profile Section */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Profile Information</h2>
-          <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    currentPassword: '',
+    newPassword: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user) {
+      setFormData(prev => ({ ...prev, name: user.name, email: user.email }));
+    }
+  }, [user, authLoading, router]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('Settings updated successfully. If email changed, sign in again.');
+        setFormData(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
+      } else {
+        setError(data.error || 'Failed to update settings');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+    }
+    setLoading(false);
+  };
+
+  if (authLoading) return <div className="flex justify-center py-20 text-secondary">Loading...</div>;
+  if (!user) return null;
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
+      <h1 className="text-3xl font-bold text-foreground mb-8">Account Settings</h1>
+
+      {error && <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl">{error}</div>}
+      {success && <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 text-green-500 rounded-xl">{success}</div>}
+
+      <form onSubmit={handleSave} className="space-y-6">
+        <div className="glass rounded-2xl border border-border/50 p-6 sm:p-8">
+          <h2 className="text-xl font-semibold text-foreground mb-6">Profile Information</h2>
+          <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div>
-                   <label className="block text-sm font-medium text-slate-400 mb-1">Full Name</label>
-                   <input type="text" className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" defaultValue="Admin User" />
+                   <label className="block text-sm font-medium text-secondary mb-1.5">Full Name</label>
+                   <input 
+                     type="text" 
+                     name="name" 
+                     required 
+                     value={formData.name} 
+                     onChange={handleChange} 
+                     className="w-full bg-background border border-border rounded-lg py-2.5 px-4 text-foreground focus:outline-none focus:border-blue-500 transition-colors" 
+                   />
                 </div>
                 <div>
-                   <label className="block text-sm font-medium text-slate-400 mb-1">Email</label>
-                   <input type="email" className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-blue-500" defaultValue="admin@energrid.com" />
+                   <label className="block text-sm font-medium text-secondary mb-1.5">Email Address</label>
+                   <input 
+                     type="email" 
+                     name="email" 
+                     required 
+                     value={formData.email} 
+                     onChange={handleChange} 
+                     className="w-full bg-background border border-border rounded-lg py-2.5 px-4 text-foreground focus:outline-none focus:border-blue-500 transition-colors" 
+                   />
                 </div>
               </div>
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Notifications</h2>
+        <div className="glass rounded-2xl border border-border/50 p-6 sm:p-8">
+          <h2 className="text-xl font-semibold text-foreground mb-2">Change Password</h2>
+          <p className="text-sm text-secondary mb-6">Leave blank if you do not want to change your password.</p>
           <div className="space-y-4">
-            {['Email Alerts for Critical Failures', 'Weekly Efficiency Reports', 'New Device Detection', 'Maintenance Reminders'].map((setting, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                    <span className="text-slate-300">{setting}</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                </div>
-            ))}
+              <div>
+                 <label className="block text-sm font-medium text-secondary mb-1.5">Current Password</label>
+                 <input 
+                   type="password" 
+                   name="currentPassword" 
+                   value={formData.currentPassword} 
+                   onChange={handleChange} 
+                   placeholder="••••••••" 
+                   className="w-full bg-background border border-border rounded-lg py-2.5 px-4 text-foreground focus:outline-none focus:border-blue-500 transition-colors max-w-md" 
+                 />
+              </div>
+              <div>
+                 <label className="block text-sm font-medium text-secondary mb-1.5">New Password</label>
+                 <input 
+                   type="password" 
+                   name="newPassword" 
+                   value={formData.newPassword} 
+                   onChange={handleChange} 
+                   placeholder="••••••••" 
+                   className="w-full bg-background border border-border rounded-lg py-2.5 px-4 text-foreground focus:outline-none focus:border-blue-500 transition-colors max-w-md" 
+                 />
+              </div>
           </div>
         </div>
-
-        {/* System Preferences */}
-        <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-           <h2 className="text-xl font-semibold text-white mb-4">System Preferences</h2>
-           <div className="space-y-4">
-               <div>
-                   <label className="block text-sm font-medium text-slate-400 mb-1">Refresh Rate</label>
-                   <select className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                       <option>Real-time (Auto)</option>
-                       <option>Every 5 seconds</option>
-                       <option>Every minute</option>
-                   </select>
-               </div>
-               <div>
-                   <label className="block text-sm font-medium text-slate-400 mb-1">Data Retention</label>
-                   <select className="w-full bg-slate-950 border border-slate-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                       <option>30 Days</option>
-                       <option>90 Days</option>
-                       <option>1 Year</option>
-                   </select>
-               </div>
-           </div>
-        </div>
         
-        <div className="flex justify-end pt-4">
-            <button className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors">
-                Save Changes
+        <div className="flex justify-end pt-2">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all duration-300 disabled:opacity-50 shadow-lg shadow-blue-600/20"
+            >
+                {loading ? 'Saving...' : 'Save Changes'}
             </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

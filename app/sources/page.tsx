@@ -1,178 +1,217 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { MapPin, Search, Filter } from 'lucide-react';
+import { allStates, getCitiesForState } from '@/lib/locations';
+
+const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
+
+interface Source {
+  _id: string;
+  name: string;
+  type: string;
+  state: string;
+  city: string;
+  capacityKW: number;
+  status: string;
+  installedDate: string;
+  lat?: number;
+  lng?: number;
+}
 
 export default function SourcesPage() {
+  const [sources, setSources] = useState<Source[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name');
   const [filterType, setFilterType] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [cities, setCities] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
-  const sources = [
-    { id: 1, name: 'Solar Array Alpha', type: 'Solar', location: 'Roof Sector A', status: 'Active', capacity: '50 kW', output: '42 kW', efficiency: '84%', image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800' },
-    { id: 2, name: 'Wind Turbine X1', type: 'Wind', location: 'Field B', status: 'Maintenance', capacity: '120 kW', output: '0 kW', efficiency: '0%', image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&q=80&w=800' },
-    { id: 3, name: 'Grid Connection Main', type: 'Grid', location: 'Substation', status: 'Active', capacity: '500 kW', output: '150 kW', efficiency: '99%', image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800' },
-    { id: 4, name: 'Backup Battery Pack 1', type: 'Storage', location: 'Basement', status: 'Standby', capacity: '200 kWh', output: '0 kW', efficiency: '100%', image: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&q=80&w=800' },
-    { id: 5, name: 'Solar Array Beta', type: 'Solar', location: 'Roof Sector B', status: 'Active', capacity: '45 kW', output: '38 kW', efficiency: '84%', image: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80&w=800' },
-    { id: 6, name: 'Geothermal unit', type: 'Geothermal', location: 'Ground', status: 'Warning', capacity: '30 kW', output: '15 kW', efficiency: '50%', image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=800' },
-  ];
+  useEffect(() => {
+    if (selectedState) {
+      setCities(getCitiesForState(selectedState));
+      setSelectedCity('');
+    } else {
+      setCities([]);
+      setSelectedCity('');
+    }
+  }, [selectedState]);
 
-  const types = ['All', ...Array.from(new Set(sources.map((s) => s.type)))];
-  const statuses = ['All', ...Array.from(new Set(sources.map((s) => s.status)))];
+  useEffect(() => {
+    fetchSources();
+  }, [selectedState, selectedCity]);
 
-  const filteredAndSortedSources = useMemo(() => {
+  const fetchSources = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedState) params.set('state', selectedState);
+      if (selectedCity) params.set('city', selectedCity);
+      const res = await fetch(`/api/energy-sources?${params}`);
+      const data = await res.json();
+      setSources(data.sources || []);
+    } catch (err) {
+      console.error('Fetch sources error:', err);
+    }
+    setLoading(false);
+  };
+
+  const filteredSources = useMemo(() => {
     let result = [...sources];
-
     if (searchTerm) {
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          s.location.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.state.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    if (filterType !== 'All') {
-      result = result.filter((s) => s.type === filterType);
-    }
-
-    if (filterStatus !== 'All') {
-      result = result.filter((s) => s.status === filterStatus);
-    }
-
-    result.sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'type') return a.type.localeCompare(b.type);
-      if (sortBy === 'status') return a.status.localeCompare(b.status);
-      if (sortBy === 'capacity') return parseInt(a.capacity) - parseInt(b.capacity);
-      if (sortBy === 'output') return parseInt(a.output) - parseInt(b.output);
-      return 0;
-    });
-
+    if (filterType !== 'All') result = result.filter(s => s.type === filterType.toLowerCase());
+    if (filterStatus !== 'All') result = result.filter(s => s.status === filterStatus.toLowerCase());
     return result;
-  }, [searchTerm, sortBy, filterType, filterStatus]);
+  }, [sources, searchTerm, filterType, filterStatus]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-400/10 text-green-400 ring-green-400/20';
+      case 'maintenance': return 'bg-amber-400/10 text-amber-400 ring-amber-400/20';
+      case 'inactive': return 'bg-slate-400/10 text-slate-400 ring-slate-400/20';
+      default: return 'bg-slate-400/10 text-slate-400 ring-slate-400/20';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'solar': return '☀️';
+      case 'wind': return '💨';
+      case 'hydro': return '💧';
+      default: return '⚡';
+    }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <h1 className="text-3xl font-bold text-white">Energy Sources</h1>
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
-          Add New Source
-        </button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Energy Sources</h1>
+          <p className="text-secondary mt-1">{filteredSources.length} sources found</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          >
+            Grid View
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'map' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+          >
+            <MapPin size={14} /> Map View
+          </button>
+        </div>
       </div>
 
-      <div className="bg-slate-900 rounded-xl p-4 mb-8 border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Filters */}
+      <div className="bg-slate-900 rounded-xl p-4 mb-8 border border-slate-800 grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
           <label className="block text-xs text-slate-400 mb-1">Search</label>
-          <input
-            type="text"
-            placeholder="Search by name or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-          />
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search sources..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+            />
+          </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Filter by Type</label>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-          >
-            {types.map(t => <option key={t} value={t}>{t}</option>)}
+          <label className="block text-xs text-slate-400 mb-1">State</label>
+          <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            <option value="">All States</option>
+            {allStates.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Filter by Status</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-          >
-            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+          <label className="block text-xs text-slate-400 mb-1">City</label>
+          <select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500" disabled={!selectedState}>
+            <option value="">All Cities</option>
+            {cities.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Sort by</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-          >
-            <option value="name">Name (A-Z)</option>
-            <option value="type">Type</option>
-            <option value="status">Status</option>
-            <option value="capacity">Capacity</option>
-            <option value="output">Output</option>
+          <label className="block text-xs text-slate-400 mb-1">Type</label>
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            <option value="All">All Types</option>
+            <option value="solar">Solar</option>
+            <option value="wind">Wind</option>
+            <option value="hydro">Hydro</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-slate-400 mb-1">Status</label>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            <option value="All">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedSources.map((source) => (
-          <div key={source.id} className="rounded-xl bg-slate-900 border border-slate-800 p-6 hover:border-slate-700 transition-all group">
-            <div className="h-32 mb-4 w-full bg-slate-800 rounded-lg flex items-center justify-center border border-slate-700 relative overflow-hidden">
-              <img src={source.image} alt={source.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            </div>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{source.name}</h3>
-                <p className="text-sm text-slate-400">{source.location}</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-secondary">Loading sources...</div>
+      ) : viewMode === 'map' ? (
+        <div className="rounded-2xl overflow-hidden border border-slate-800" style={{ height: '500px' }}>
+          <MapView sources={filteredSources} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSources.map((source) => (
+            <div key={source._id} className="rounded-xl bg-slate-900 border border-slate-800 p-6 hover:border-slate-700 transition-all group">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl">{getTypeIcon(source.type)}</span>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">{source.name}</h3>
+                  </div>
+                  <p className="text-sm text-slate-400 flex items-center gap-1">
+                    <MapPin size={12} /> {source.city}, {source.state}
+                  </p>
+                </div>
+                <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(source.status)}`}>
+                  {source.status}
+                </span>
               </div>
-              <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                source.status === 'Active' ? 'bg-green-400/10 text-green-400 ring-green-400/20' :
-                source.status === 'Maintenance' ? 'bg-slate-400/10 text-slate-400 ring-slate-400/20' :
-                source.status === 'Standby' ? 'bg-blue-400/10 text-blue-400 ring-blue-400/20' :
-                'bg-red-400/10 text-red-400 ring-red-400/20'
-              }`}>
-                {source.status}
-              </span>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Type</span>
-                <span className="text-slate-300">{source.type}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Capacity</span>
-                <span className="text-slate-300">{source.capacity}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Current Output</span>
-                <span className="text-slate-300">{source.output}</span>
-              </div>
-              
-              <div className="pt-2">
-                 <div className="flex justify-between text-xs mb-1">
-                   <span className="text-slate-500">Efficiency</span>
-                   <span className="text-slate-300">{source.efficiency}</span>
-                 </div>
-                 <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div 
-                      className="bg-blue-600 h-1.5 rounded-full" 
-                      style={{ width: source.efficiency === '0%' ? '0%' : source.efficiency }}
-                    ></div>
-                 </div>
-              </div>
-            </div>
 
-            <div className="mt-6 flex gap-2">
-                <button className="flex-1 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 rounded hover:bg-slate-700 transition-colors">
-                    Manage
-                </button>
-                <button className="flex-1 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 rounded hover:bg-slate-700 transition-colors">
-                    History
-                </button>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Type</span>
+                  <span className="text-slate-300 capitalize">{source.type}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Capacity</span>
+                  <span className="text-slate-300">{source.capacityKW >= 1000 ? `${(source.capacityKW / 1000).toFixed(0)} MW` : `${source.capacityKW} kW`}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Installed</span>
+                  <span className="text-slate-300">{new Date(source.installedDate).toLocaleDateString()}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
-        {filteredAndSortedSources.length === 0 && (
-          <div className="col-span-full py-12 text-center text-slate-500">
-            No energy sources found matching your criteria.
-          </div>
-        )}
-      </div>
+          ))}
+          {filteredSources.length === 0 && (
+            <div className="col-span-full py-12 text-center text-slate-500">
+              No energy sources found matching your criteria.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-

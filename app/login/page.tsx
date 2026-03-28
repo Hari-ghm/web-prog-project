@@ -1,8 +1,32 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    const result = await login(email, password);
+    if (result.success) {
+      router.push('/dashboard');
+    } else {
+      setError(result.error || 'Login failed');
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 p-10 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl">
@@ -14,7 +38,14 @@ export default function LoginPage() {
             Sign in to access your energy dashboard
           </p>
         </div>
-        <form className="mt-8 space-y-6" action="#" method="POST">
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">Email address</label>
@@ -24,6 +55,8 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="relative block w-full rounded-lg bg-slate-950 border border-slate-700 px-4 py-3 placeholder-slate-500 text-white focus:z-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all"
                 placeholder="Email address"
               />
@@ -36,6 +69,8 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="relative block w-full rounded-lg bg-slate-950 border border-slate-700 px-4 py-3 placeholder-slate-500 text-white focus:z-10 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-all"
                 placeholder="Password"
               />
@@ -54,25 +89,20 @@ export default function LoginPage() {
                 Remember me
               </label>
             </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-blue-400 hover:text-blue-300">
-                Forgot password?
-              </a>
-            </div>
           </div>
 
           <div>
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(59,130,246,0.5)]"
+              disabled={isLoading}
+              className="group relative flex w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_-5px_rgba(59,130,246,0.5)] disabled:opacity-50"
             >
-              Sign in
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
           
           <div className="text-center text-sm text-slate-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="font-medium text-blue-400 hover:text-blue-300">
               Sign up
             </Link>

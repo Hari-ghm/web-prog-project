@@ -3,18 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-import { Sun, Moon, Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { user, logout, loading } = useAuth();
 
   const navLinks = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -52,31 +47,31 @@ export default function Navbar() {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-secondary hover:text-foreground transition-all duration-300 hover:scale-105"
-                aria-label="Toggle Theme"
+            {!loading && user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+                  <User size={14} className="text-blue-400" />
+                  <span className="text-sm font-medium text-blue-400">{user.name}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 uppercase">{user.role}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-secondary hover:text-red-400 transition-all duration-300 hover:scale-105"
+                  aria-label="Sign Out"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : !loading ? (
+              <Link
+                href="/login"
+                className="ml-4 px-5 py-2 rounded-full bg-foreground text-background font-semibold transition-all duration-300 hover:scale-105 shadow-md dark:shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] dark:bg-blue-600 dark:text-white dark:hover:bg-blue-500"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-            )}
-            <Link
-              href="/login"
-              className="ml-4 px-5 py-2 rounded-full bg-foreground text-background font-semibold transition-all duration-300 hover:scale-105 shadow-md dark:shadow-[0_0_15px_-3px_rgba(59,130,246,0.4)] dark:bg-blue-600 dark:text-white dark:hover:bg-blue-500"
-            >
-              Sign In
-            </Link>
+                Sign In
+              </Link>
+            ) : null}
           </div>
           <div className="-mr-2 flex md:hidden items-center space-x-3">
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-full text-secondary hover:text-foreground"
-              >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-            )}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               type="button"
@@ -106,13 +101,22 @@ export default function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <Link
-              href="/login"
-              className="block w-full text-center mt-4 px-4 py-3 rounded-md bg-foreground text-background dark:bg-blue-600 dark:text-white font-semibold"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Sign In
-            </Link>
+            {!loading && user ? (
+              <button
+                onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:bg-red-500/10"
+              >
+                Sign Out ({user.name})
+              </button>
+            ) : !loading ? (
+              <Link
+                href="/login"
+                className="block w-full text-center mt-4 px-4 py-3 rounded-md bg-foreground text-background dark:bg-blue-600 dark:text-white font-semibold"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            ) : null}
           </div>
         </div>
       )}
