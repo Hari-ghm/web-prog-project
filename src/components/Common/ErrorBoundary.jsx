@@ -24,7 +24,11 @@ class ErrorBoundary extends Component {
           </p>
           <button 
             className="mt-4 px-4 py-2 bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200 rounded text-sm hover:bg-red-200 dark:hover:bg-red-700 transition"
-            onClick={() => this.setState({ hasError: false })}
+            onClick={() => {
+              this.setState({ hasError: false });
+              // Trigger page reload to recover from error state
+              window.location.reload();
+            }}
           >
             Try Again
           </button>

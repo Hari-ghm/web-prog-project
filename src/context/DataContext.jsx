@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STATES, CITIES } from '../utils/constants';
 import { fetchEnergyData } from '../services/dataService';
@@ -15,19 +15,45 @@ export const DataProvider = ({ children }) => {
   const [customStates, setCustomStates] = useLocalStorage('customStates', []);
   const [customCities, setCustomCities] = useLocalStorage('customCities', {});
   
-  const mergedStates = [...STATES, ...customStates];
-  const mergedCities = { ...CITIES };
-  Object.keys(customCities).forEach(stateId => {
-    if (mergedCities[stateId]) {
-      mergedCities[stateId] = [...mergedCities[stateId], ...customCities[stateId]];
-    } else {
-      mergedCities[stateId] = customCities[stateId];
-    }
-  });
+  const mergedStates = useMemo(() => {
+    const uniqueCustomStates = customStates.filter(
+      customState => !STATES.some(state => state.id === customState.id)
+    );
+
+    return [...STATES, ...uniqueCustomStates];
+  }, [customStates]);
+
+  const mergedCities = useMemo(() => {
+    const citiesByState = { ...CITIES };
+
+    Object.keys(customCities).forEach(stateId => {
+      const baseCities = citiesByState[stateId] || [];
+      const customStateCities = customCities[stateId] || [];
+      const dedupedCities = [...baseCities];
+      const seenIds = new Set(baseCities.map(city => city.id));
+
+      customStateCities.forEach(city => {
+        if (!seenIds.has(city.id)) {
+          dedupedCities.push(city);
+          seenIds.add(city.id);
+        }
+      });
+
+      citiesByState[stateId] = dedupedCities;
+    });
+
+    return citiesByState;
+  }, [customCities]);
 
   const [selectedState, setSelectedState] = useLocalStorage('selectedState', STATES[0].id);
-  // Ensure we fallback properly if city is missing
-  const [selectedCity, setSelectedCity] = useLocalStorage('selectedCity', CITIES['tamil-nadu'][0].id);
+  
+  // Initialize selectedCity with proper fallback logic
+  const getInitialCity = () => {
+    const stateCities = CITIES[STATES[0].id] || [];
+    return stateCities.length > 0 ? stateCities[0].id : 'all';
+  };
+  
+  const [selectedCity, setSelectedCity] = useLocalStorage('selectedCity', getInitialCity());
   const [timeframe, setTimeframe] = useState('Daily');
   const [energyData, setEnergyData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,16 +76,23 @@ export const DataProvider = ({ children }) => {
     if (!isSilent) setLoading(true);
     try {
       const cities = mergedCities[selectedState] || [];
-      const cityData = cities.find(c => c.id === selectedCity) || cities[0];
       
-      if (!cityData) {
+      // Handle case where state has no cities
+      if (cities.length === 0) {
         setEnergyData(null);
         setFallbackMode(true);
         setLoading(false);
         return;
       }
       
-      const data = await fetchEnergyData(cityData.lat, cityData.lon, timeframe);
+      // Ensure selected city is valid for current state
+      let cityToUse = cities.find(c => c.id === selectedCity);
+      if (!cityToUse) {
+        cityToUse = cities[0];
+        setSelectedCity(cityToUse.id);
+      }
+      
+      const data = await fetchEnergyData(cityToUse.lat, cityToUse.lon, timeframe);
       
       setEnergyData(data);
       setFallbackMode(data.isMock);
@@ -72,7 +105,7 @@ export const DataProvider = ({ children }) => {
     } finally {
       if (!isSilent) setLoading(false);
     }
-  }, [selectedCity]);
+  }, [selectedCity, selectedState, timeframe, mergedCities, setSelectedCity]);
 
   // Initial load and dependency change load
   useEffect(() => {
@@ -95,7 +128,7 @@ export const DataProvider = ({ children }) => {
     lastUpdated,
     refreshData: () => loadData(false),
     silentRefresh: () => loadData(true),
-    setEnergyData, // for real-time hook to update
+    setEnergyData,
     mergedStates,
     mergedCities,
     setCustomStates,

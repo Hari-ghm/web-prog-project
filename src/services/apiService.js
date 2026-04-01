@@ -15,6 +15,10 @@ export const fetchOpenWeatherData = async (lat, lon) => {
 };
 
 export const fetchNasaPowerData = async (lat, lon) => {
+  if (!NASA_POWER_KEY || NASA_POWER_KEY === 'your_nasa_power_api_key_here') {
+    throw new Error('NASA POWER API Key missing');
+  }
+  
   // NASA POWER doesn't strictly require an API key for basic community access
   // but we'll use it if provided. Using a generic REST endpoint for solar insolation.
   const today = new Date();
@@ -37,7 +41,7 @@ export const fetchNasaPowerData = async (lat, lon) => {
   const endStr = formatDate(today);
 
   const response = await fetch(
-    `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=${lon}&latitude=${lat}&start=${startStr}&end=${endStr}&format=JSON`
+    `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=${lon}&latitude=${lat}&start=${startStr}&end=${endStr}&format=JSON&api_key=${NASA_POWER_KEY}`
   );
 
   if (!response.ok) throw new Error('NASA POWER API failed');

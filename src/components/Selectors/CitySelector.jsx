@@ -9,8 +9,15 @@ const CitySelector = () => {
 
   // Reset selected city if current state doesn't have it
   useEffect(() => {
-    if (cities.length > 0 && !cities.find(c => c.id === selectedCity)) {
-      setSelectedCity(cities[0].id);
+    if (cities.length > 0) {
+      // Check if current selection is "all" or if the city doesn't exist
+      const cityExists = cities.find(c => c.id === selectedCity);
+      if (!cityExists && selectedCity !== 'all') {
+        setSelectedCity(cities[0].id);
+      }
+    } else if (selectedCity !== 'coming-soon') {
+      // For states with no cities, set a special value
+      setSelectedCity('coming-soon');
     }
   }, [selectedState, cities, selectedCity, setSelectedCity]);
 
@@ -33,7 +40,6 @@ const CitySelector = () => {
         onChange={handleCityChange}
         className="appearance-none bg-white dark:bg-darkSecondary border border-borderLight dark:border-gray-700 text-textPrimary dark:text-darkTextPrimary text-sm rounded-lg block w-40 p-2.5 focus:ring-teal focus:border-teal outline-none cursor-pointer"
       >
-        <option value="all">All Cities (State View)</option>
         {cities.map(city => (
           <option key={city.id} value={city.id}>
             {city.name}

@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Energy from './pages/Energy';
 import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
+import Alerts from './pages/Alerts';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
 import GlobalWeather from './pages/GlobalWeather';
@@ -25,6 +26,7 @@ function App() {
             <Route path="energy" element={<Energy />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="alerts" element={<Alerts />} />
             <Route path="settings" element={<Settings />} />
             <Route path="admin" element={<Admin />} />
             <Route path="global-weather" element={<GlobalWeather />} />

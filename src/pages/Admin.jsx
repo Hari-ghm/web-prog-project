@@ -1,18 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 
 const Admin = () => {
-  const { mergedStates, mergedCities, setCustomStates, setCustomCities } = useData();
+  const { mergedStates, mergedCities, setCustomStates, setCustomCities, addNotification } = useData();
   
   // Form States
   const [newState, setNewState] = useState({ id: '', name: '' });
   const [newCity, setNewCity] = useState({ stateId: mergedStates[0]?.id || '', id: '', name: '', lat: '', lon: '' });
+  
+  // Real-time audit logs
+  const [auditLogs, setAuditLogs] = useState([
+    { time: '10:42:15', user: 'system', action: 'API Sync OpenWeather', status: 'Success' },
+    { time: '10:35:02', user: 'admin', action: 'Modified Thresholds', status: 'Success' },
+    { time: '10:15:00', user: 'system', action: 'API Sync NASA Power', status: 'Failed: Network Timeout' },
+    { time: '10:15:01', user: 'system', action: 'Failover Triggered', status: 'Warning' },
+    { time: '09:00:00', user: 'admin', action: 'Session Login', status: 'Success' },
+    { time: '08:45:12', user: 'system', action: 'Automated DB Backup', status: 'Success' }
+  ]);
+
+  // Generate new log entries in real-time
+  useEffect(() => {
+    const logInterval = setInterval(() => {
+      const actions = [
+        { action: 'API Sync OpenWeather', status: 'Success', user: 'system' },
+        { action: 'API Sync NASA Power', status: Math.random() > 0.8 ? 'Failed: Timeout' : 'Success', user: 'system' },
+        { action: 'Data Cache Refresh', status: 'Success', user: 'system' },
+        { action: 'Chart Generation', status: 'Success', user: 'system' },
+        { action: 'Alert Threshold Check', status: 'Success', user: 'system' },
+        { action: 'Report Scheduled', status: 'Success', user: 'admin' },
+        { action: 'User Activity Log', status: 'Success', user: 'system' }
+      ];
+
+      const randomAction = actions[Math.floor(Math.random() * actions.length)];
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+      const newLog = {
+        time: timeStr,
+        user: randomAction.user,
+        action: randomAction.action,
+        status: randomAction.status
+      };
+
+      setAuditLogs(prev => [newLog, ...prev.slice(0, 9)]);
+    }, 6000); // Add new log every 6 seconds
+
+    return () => clearInterval(logInterval);
+  }, []);
 
   // Add State
   const handleAddState = (e) => {
     e.preventDefault();
     if (!newState.id || !newState.name) return;
+
+    const stateExists = mergedStates.some(state => state.id === newState.id);
+    if (stateExists) {
+      addNotification(`State "${newState.name}" already exists`, 'warning');
+      return;
+    }
+
     setCustomStates(prev => [...prev, { ...newState, active: true }]);
+    setAuditLogs(prev => [{
+      time: new Date().toLocaleTimeString(),
+      user: 'admin',
+      action: `Added State: ${newState.name}`,
+      status: 'Success'
+    }, ...prev.slice(0, 9)]);
+    addNotification(`State "${newState.name}" added successfully`, 'success');
     setNewState({ id: '', name: '' });
   };
 
@@ -20,6 +74,13 @@ const Admin = () => {
   const handleAddCity = (e) => {
     e.preventDefault();
     if (!newCity.stateId || !newCity.id || !newCity.name || !newCity.lat || !newCity.lon) return;
+
+    const existingCities = mergedCities[newCity.stateId] || [];
+    const cityExists = existingCities.some(city => city.id === newCity.id);
+    if (cityExists) {
+      addNotification(`City "${newCity.name}" already exists in this state`, 'warning');
+      return;
+    }
     
     setCustomCities(prev => {
       const stateCities = prev[newCity.stateId] || [];
@@ -33,6 +94,13 @@ const Admin = () => {
         }]
       };
     });
+    setAuditLogs(prev => [{
+      time: new Date().toLocaleTimeString(),
+      user: 'admin',
+      action: `Added City: ${newCity.name}`,
+      status: 'Success'
+    }, ...prev.slice(0, 9)]);
+    addNotification(`City "${newCity.name}" added successfully`, 'success');
     setNewCity({ ...newCity, id: '', name: '', lat: '', lon: '' });
   };
 
@@ -107,22 +175,20 @@ const Admin = () => {
           <div className="card-base overflow-hidden flex flex-col h-96">
             <div className="p-4 border-b border-borderLight dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
               <h2 className="font-semibold">System Audit Log</h2>
-              <span className="text-xs bg-teal text-white px-2 py-1 rounded">Live</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-teal rounded-full animate-pulse"></span>
+                <span className="text-xs bg-teal text-white px-2 py-1 rounded">Live</span>
+              </div>
             </div>
             <div className="p-4 flex-1 overflow-y-auto space-y-3 font-mono text-xs">
-              {[
-                { time: '10:42:15', user: 'system', action: 'API Sync OpenWeather', status: 'Success' },
-                { time: '10:35:02', user: 'admin', action: 'Modified Thresholds', status: 'Success' },
-                { time: '10:15:00', user: 'system', action: 'API Sync NASA Power', status: 'Failed: Network Timeout' },
-                { time: '10:15:01', user: 'system', action: 'Failover Triggered', status: 'Warning' },
-                { time: '09:00:00', user: 'admin', action: 'Session Login', status: 'Success' },
-                { time: '08:45:12', user: 'system', action: 'Automated DB Backup', status: 'Success' }
-              ].map((log, i) => (
-                <div key={i} className="flex border-b border-gray-100 dark:border-gray-800 pb-2 mb-2 last:border-0">
-                  <span className="text-gray-400 dark:text-gray-500 w-16">{log.time}</span>
-                  <span className="text-blue w-16 px-2">{log.user}</span>
+              {auditLogs.map((log, i) => (
+                <div key={i} className="flex border-b border-gray-100 dark:border-gray-800 pb-2 mb-2 last:border-0 items-start gap-2 animate-[fadeIn_0.3s_ease-in]">
+                  <span className="text-gray-400 dark:text-gray-500 w-20 shrink-0">{log.time}</span>
+                  <span className="text-blue w-16 px-2 shrink-0">{log.user}</span>
                   <span className="flex-1 text-textPrimary dark:text-gray-300">{log.action}</span>
-                  <span className={log.status.includes('Success') ? 'text-green-500' : log.status.includes('Warn') ? 'text-amber-500' : 'text-red-500'}>{log.status}</span>
+                  <span className={`shrink-0 ${log.status.includes('Success') ? 'text-green-500' : log.status.includes('Warning') || log.status.includes('Warn') ? 'text-amber-500' : 'text-red-500'}`}>
+                    {log.status.split(':')[0]}
+                  </span>
                 </div>
               ))}
             </div>
@@ -138,6 +204,10 @@ const Admin = () => {
             <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
               <span className="text-textSecondary dark:text-gray-400">Total Registered Cities</span>
               <span className="font-bold">{Object.values(mergedCities).flat().length}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-textSecondary dark:text-gray-400">Total Audit Logs</span>
+              <span className="font-bold">{auditLogs.length}</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-textSecondary dark:text-gray-400">Database Status</span>

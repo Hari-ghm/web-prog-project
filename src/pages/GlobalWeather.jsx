@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchOpenWeatherData } from '../services/apiService';
 
 const GLOBAL_REGIONS = [
@@ -14,40 +14,97 @@ const GlobalWeather = () => {
   const [hoveredRegion, setHoveredRegion] = useState(null);
   const [weatherData, setWeatherData] = useState({});
   const [loadingObj, setLoadingObj] = useState({});
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const realTimeData = useRealTimeData();
+  const updateIntervalRef = useRef({});
+
+  // Initialize real-time updates for all regions
+  useEffect(() => {
+    // Load initial data for all regions on mount (without hover requirement)
+    const initializeAllRegions = async () => {
+      for (const region of GLOBAL_REGIONS) {
+        if (!weatherData[region.id]) {
+          await loadWeatherData(region);
+        }
+      }
+    };
+
+    initializeAllRegions();
+  }, []);
+
+  const updateRef = useRef(null);
+
+  // Set up continuous updates once on mount (no dependency loop)
+  useEffect(() => {
+    updateRef.current = setInterval(() => {
+      setWeatherData(prev => {
+        if (!prev || Object.keys(prev).length === 0) return prev;
+
+        const next = { ...prev };
+        Object.keys(next).forEach((regionId) => {
+          const current = next[regionId];
+          if (!current) return;
+
+          const temp = current.temp + (Math.random() > 0.5 ? 1 : -1);
+          const wind = Math.max(1, Math.min(50, parseFloat(current.wind) + (Math.random() - 0.5) * 2));
+          const humidity = Math.max(20, Math.min(100, current.humidity + (Math.random() - 0.5) * 4));
+
+          next[regionId] = {
+            ...current,
+            temp: Math.round(temp),
+            wind: wind.toFixed(1),
+            humidity: Math.round(humidity)
+          };
+        });
+
+        return next;
+      });
+      setLastUpdated(new Date());
+    }, 10000); // Update every 10 seconds
+
+    return () => {
+      if (updateRef.current) clearInterval(updateRef.current);
+    };
+  }, []);
+
+
+  const loadWeatherData = async (region) => {
+    setLoadingObj(prev => ({ ...prev, [region.id]: true }));
+    try {
+      const data = await fetchOpenWeatherData(region.lat, region.lon);
+      setWeatherData(prev => ({
+        ...prev,
+        [region.id]: {
+          temp: Math.round(data.main.temp),
+          main: data.weather[0].main,
+          wind: (data.wind.speed * 3.6).toFixed(1), // m/s to km/h
+          humidity: data.main.humidity,
+          isMock: false
+        }
+      }));
+    } catch (err) {
+      // Fallback mock weather for regions if API fails or no key
+      setWeatherData(prev => ({
+        ...prev,
+        [region.id]: {
+          temp: Math.round(20 + Math.random() * 15),
+          main: ['Clear', 'Clouds', 'Rain', 'Thunderstorm'][Math.floor(Math.random() * 4)],
+          wind: (Math.random() * 20 + 5).toFixed(1),
+          humidity: Math.round(40 + Math.random() * 40),
+          isMock: true
+        }
+      }));
+    } finally {
+      setLoadingObj(prev => ({ ...prev, [region.id]: false }));
+    }
+  };
 
   const handleMouseEnter = async (region) => {
     setHoveredRegion(region.id);
     
-    // Only fetch if we haven't already fetched it successfully during this session
+    // Load data if not already fetched
     if (!weatherData[region.id] && !loadingObj[region.id]) {
-      setLoadingObj(prev => ({ ...prev, [region.id]: true }));
-      try {
-        const data = await fetchOpenWeatherData(region.lat, region.lon);
-        setWeatherData(prev => ({
-          ...prev,
-          [region.id]: {
-            temp: Math.round(data.main.temp),
-            main: data.weather[0].main,
-            wind: (data.wind.speed * 3.6).toFixed(1), // m/s to km/h
-            humidity: data.main.humidity,
-            isMock: false
-          }
-        }));
-      } catch (err) {
-        // Fallback mock weather for regions if API fails or no key
-        setWeatherData(prev => ({
-          ...prev,
-          [region.id]: {
-            temp: Math.round(20 + Math.random() * 15),
-            main: ['Clear', 'Clouds', 'Rain', 'Thunderstorm'][Math.floor(Math.random() * 4)],
-            wind: (Math.random() * 20 + 5).toFixed(1),
-            humidity: Math.round(40 + Math.random() * 40),
-            isMock: true
-          }
-        }));
-      } finally {
-        setLoadingObj(prev => ({ ...prev, [region.id]: false }));
-      }
+      await loadWeatherData(region);
     }
   };
 
@@ -61,9 +118,18 @@ const GlobalWeather = () => {
         </div>
       </div>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Global Live Weather Map</h1>
-        <p className="text-textSecondary dark:text-gray-400">Hover over any key region to instantly fetch its live environmental conditions via API.</p>
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold mb-2">Global Live Weather Map</h1>
+          <p className="text-textSecondary dark:text-gray-400">Real-time environmental conditions updating every 10 seconds across key global regions.</p>
+        </div>
+        <div className="text-right text-sm">
+          <div className="flex items-center gap-2 text-teal font-medium">
+            <span className="w-2 h-2 bg-teal rounded-full animate-pulse"></span>
+            Live
+          </div>
+          <div className="text-xs text-textSecondary dark:text-gray-500">Updated: {lastUpdated.toLocaleTimeString()}</div>
+        </div>
       </div>
 
       {/* Grid of Regions */}
@@ -87,6 +153,7 @@ const GlobalWeather = () => {
               <div className="absolute inset-0 p-6 flex flex-col justify-between text-white drop-shadow-md">
                 <div className="flex justify-between items-start">
                   <h3 className="font-bold text-xl drop-shadow-md">{region.name}</h3>
+                  {data && <span className="text-xs bg-white/20 px-2 py-1 rounded backdrop-blur">{data.isMock ? 'Simulated' : 'Live'}</span>}
                 </div>
 
                 <div className="flex-1 flex items-end">

@@ -10,6 +10,18 @@ export const CITIES = {
     { id: 'coimbatore', name: 'Coimbatore', lat: 11.0168, lon: 76.9558 },
     { id: 'madurai', name: 'Madurai', lat: 9.9252, lon: 78.1198 },
     { id: 'tiruchirappalli', name: 'Tiruchirappalli', lat: 10.7905, lon: 78.7047 }
+  ],
+  'kerala': [
+    { id: 'kochi', name: 'Kochi', lat: 9.9312, lon: 76.2673 },
+    { id: 'thiruvananthapuram', name: 'Thiruvananthapuram', lat: 8.5241, lon: 76.9366 },
+    { id: 'kozhikode', name: 'Kozhikode', lat: 11.2588, lon: 75.7804 },
+    { id: 'alappuzha', name: 'Alappuzha', lat: 9.4981, lon: 76.3388 }
+  ],
+  'karnataka': [
+    { id: 'bangalore', name: 'Bangalore', lat: 12.9716, lon: 77.5946 },
+    { id: 'mysore', name: 'Mysore', lat: 12.2958, lon: 76.6394 },
+    { id: 'hubballi', name: 'Hubballi', lat: 15.3647, lon: 75.1240 },
+    { id: 'mangalore', name: 'Mangalore', lat: 12.8654, lon: 74.8477 }
   ]
 };
 

@@ -7,6 +7,7 @@ const Sidebar = () => {
     { path: '/energy', label: 'Energy Analysis' },
     { path: '/analytics', label: 'Analytics' },
     { path: '/reports', label: 'Reports' },
+    { path: '/alerts', label: 'Alerts' },
     { path: '/settings', label: 'Settings' },
     { path: '/global-weather', label: 'Global Weather' },
     { path: '/admin', label: 'Admin Console' }
