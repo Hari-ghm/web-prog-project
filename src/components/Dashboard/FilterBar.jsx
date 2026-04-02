@@ -21,14 +21,6 @@ const FilterBar = () => {
           </button>
         ))}
       </div>
-      
-      <div className="flex gap-2 w-full sm:w-auto">
-        <select className="bg-gray-100 dark:bg-gray-800 text-sm border-none rounded-lg px-4 py-2 outline-none dark:text-darkTextPrimary w-full sm:w-auto cursor-pointer">
-          <option>All Energy</option>
-          <option>Solar Only</option>
-          <option>Wind Only</option>
-        </select>
-      </div>
     </div>
   );
 };

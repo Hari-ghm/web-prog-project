@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { useTheme } from '../hooks/useTheme';
 import { api } from '../services/backendApi';
@@ -33,8 +33,6 @@ const Settings = () => {
 
   const [apiKey1, setApiKey1] = useState(defaultSettings.openWeatherApiKey);
   const [apiKey2, setApiKey2] = useState(defaultSettings.nasaPowerApiKey);
-  const [showKey1, setShowKey1] = useState(false);
-  const [showKey2, setShowKey2] = useState(false);
 
   const [language, setLanguage] = useState(defaultSettings.language);
   const [units, setUnits] = useState(defaultSettings.units);
@@ -66,13 +64,6 @@ const Settings = () => {
     };
 
     loadPreferences();
-  }, [addNotification]);
-
-  const handleTestAPI = useCallback((apiNum) => {
-    addNotification(`API Key ${apiNum} connection test initiated...`, 'info');
-    setTimeout(() => {
-      addNotification(`API Key ${apiNum} connection successful!`, 'success');
-    }, 1500);
   }, [addNotification]);
 
   const handleExportSettings = () => {
@@ -228,32 +219,6 @@ const Settings = () => {
           <h2 className="text-lg font-semibold border-b border-borderLight dark:border-gray-800 pb-3 mb-5">Alerts & Notifications</h2>
 
           <div className="space-y-5">
-            <div className="flex items-center justify-between p-4 border border-borderLight dark:border-gray-800 rounded-lg">
-              <div>
-                <p className="font-medium text-sm">Email Alerts</p>
-                <p className="text-xs text-textSecondary dark:text-gray-500">Receive email notifications for critical events</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={emailAlerts} onChange={(e) => setEmailAlerts(e.target.checked)} className="sr-only peer" />
-                <div className={`w-11 h-6 rounded-full peer transition ${emailAlerts ? 'bg-teal' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                  <div className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full transition-all ${emailAlerts ? 'translate-x-5' : ''}`}></div>
-                </div>
-              </label>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border border-borderLight dark:border-gray-800 rounded-lg">
-              <div>
-                <p className="font-medium text-sm">System Notifications</p>
-                <p className="text-xs text-textSecondary dark:text-gray-500">In-app notifications for system status</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" checked={systemNotif} onChange={(e) => setSystemNotif(e.target.checked)} className="sr-only peer" />
-                <div className={`w-11 h-6 rounded-full peer transition ${systemNotif ? 'bg-teal' : 'bg-gray-300 dark:bg-gray-700'}`}>
-                  <div className={`absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full transition-all ${systemNotif ? 'translate-x-5' : ''}`}></div>
-                </div>
-              </label>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-textSecondary dark:text-gray-400 mb-2">Alert Sensitivity Threshold</label>
               <select value={alertThreshold} onChange={(e) => setAlertThreshold(e.target.value)} className="w-full bg-lightPrimary dark:bg-gray-800 border-none rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-teal">
@@ -271,33 +236,6 @@ const Settings = () => {
                 <option value="30s">30 seconds (Low load)</option>
                 <option value="1m">1 minute (Minimal load)</option>
               </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="card-base p-6">
-          <div className="flex justify-between items-center border-b border-borderLight dark:border-gray-800 pb-3 mb-5">
-            <h2 className="text-lg font-semibold">API Configuration</h2>
-            <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded dark:bg-teal-900 dark:text-teal-200">Security: Stored in MongoDB</span>
-          </div>
-
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-textSecondary dark:text-gray-400 mb-2">OpenWeather API Key</label>
-              <div className="flex gap-3">
-                <input type={showKey1 ? 'text' : 'password'} value={apiKey1} onChange={(e) => setApiKey1(e.target.value)} className="flex-1 bg-lightPrimary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-teal focus:border-teal outline-none" />
-                <button onClick={() => setShowKey1(!showKey1)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors">{showKey1 ? 'Hide' : 'Show'}</button>
-                <button onClick={() => handleTestAPI(1)} className="px-4 py-2 bg-teal text-white hover:bg-teal/90 rounded-lg text-sm font-medium transition-colors">Test</button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-textSecondary dark:text-gray-400 mb-2">NASA POWER API Key</label>
-              <div className="flex gap-3">
-                <input type={showKey2 ? 'text' : 'password'} value={apiKey2} onChange={(e) => setApiKey2(e.target.value)} className="flex-1 bg-lightPrimary dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm focus:ring-teal focus:border-teal outline-none" />
-                <button onClick={() => setShowKey2(!showKey2)} className="px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors">{showKey2 ? 'Hide' : 'Show'}</button>
-                <button onClick={() => handleTestAPI(2)} className="px-4 py-2 bg-teal text-white hover:bg-teal/90 rounded-lg text-sm font-medium transition-colors">Test</button>
-              </div>
             </div>
           </div>
         </div>
