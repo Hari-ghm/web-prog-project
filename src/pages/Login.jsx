@@ -3,27 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@ecodash.com');
+  const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please provide an email and password.');
       return;
     }
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      if (login(email, password)) {
-        navigate('/dashboard');
-      } else {
-        setError('Invalid credentials.');
-      }
-    }, 600);
+
+    try {
+      setSubmitting(true);
+      setError('');
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Invalid credentials.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -45,8 +48,8 @@ const Login = () => {
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-textSecondary dark:text-gray-400 mb-1">Email Address</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-800 border border-borderLight dark:border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal outline-none transition-shadow text-textPrimary dark:text-gray-200"
@@ -56,25 +59,26 @@ const Login = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-textSecondary dark:text-gray-400 mb-1">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-gray-50 dark:bg-gray-800 border border-borderLight dark:border-gray-700 rounded-lg p-3 text-sm focus:ring-2 focus:ring-teal outline-none transition-shadow text-textPrimary dark:text-gray-200"
-              placeholder="••••••••"
+              placeholder="password"
               required
             />
           </div>
-          <button 
-            type="submit" 
-            className="w-full btn-primary py-3 font-semibold text-lg shadow-md hover:shadow-lg transition-all"
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full btn-primary py-3 font-semibold text-lg shadow-md hover:shadow-lg transition-all disabled:opacity-70"
           >
-            Log In
+            {submitting ? 'Signing In...' : 'Log In'}
           </button>
         </form>
-        
+
         <p className="mt-6 text-center text-xs text-textSecondary dark:text-gray-500">
-          Any email and password will work for this simulation.
+          Default login: admin@ecodash.com / admin123
         </p>
       </div>
     </div>

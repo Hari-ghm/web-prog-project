@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { api, setAuthToken } from '../services/backendApi';
 
 const AuthContext = createContext();
 
@@ -9,33 +10,47 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('energy-auth-user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
 
-  const login = (email, password) => {
-    // Simulated authentication check
-    if (email && password) {
-      const userData = { email, name: email.split('@')[0], token: 'simulated_jwt_token_123' };
-      localStorage.setItem('energy-auth-user', JSON.stringify(userData));
-      setUser(userData);
-      return true;
-    }
-    return false;
+  const login = async (email, password) => {
+    const response = await api.login(email, password);
+    setAuthToken(response.token);
+    setUser(response.user);
+    return response.user;
   };
 
-  const logout = () => {
-    localStorage.removeItem('energy-auth-user');
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Ignore network/auth errors on logout
+    }
+    setAuthToken(null);
     setUser(null);
   };
 
+  const refreshUser = useCallback(async () => {
+    if (!user) return null;
+    const response = await api.me();
+    setUser(response.user);
+    return response.user;
+  }, [user]);
+
+  const updateUserPreferences = useCallback((preferences) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        preferences: {
+          ...(prev.preferences || {}),
+          ...preferences
+        }
+      };
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, authLoading: false, refreshUser, updateUserPreferences }}>
       {children}
     </AuthContext.Provider>
   );

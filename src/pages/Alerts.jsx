@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import { useRealTimeData } from '../hooks/useRealTimeData';
 
 const Alerts = () => {
   useRealTimeData();
   const { energyData, selectedState, selectedCity } = useData();
+  const nextAlertIdRef = useRef(1000);
   const [alerts, setAlerts] = useState([
     {
       id: 1,
@@ -28,65 +29,67 @@ const Alerts = () => {
 
   const [acknowledgedAlerts, setAcknowledgedAlerts] = useState([]);
   const [filterType, setFilterType] = useState('all');
+  const createAlertId = () => nextAlertIdRef.current++;
 
   useEffect(() => {
     if (!energyData) return;
 
     const checkAlerts = () => {
-      const newAlerts = [];
+      const candidateAlerts = [];
       
       if (energyData.solar.power < 50) {
-        const existingAlert = alerts.find(a => a.id === 100);
-        if (!existingAlert) {
-          newAlerts.push({
-            id: 100,
-            type: 'warning',
-            title: 'Low Solar Output',
-            message: `Solar power is at ${energyData.solar.power}MW (below threshold of 50MW)`,
-            timestamp: new Date(),
-            source: 'Solar Sensor Network',
-            acknowledged: false
-          });
-        }
+        candidateAlerts.push({
+          ruleId: 100,
+          type: 'warning',
+          title: 'Low Solar Output',
+          message: `Solar power is at ${energyData.solar.power}MW (below threshold of 50MW)`,
+          timestamp: new Date(),
+          source: 'Solar Sensor Network',
+          acknowledged: false
+        });
       }
 
       if (energyData.wind.power < 40) {
-        const existingAlert = alerts.find(a => a.id === 101);
-        if (!existingAlert) {
-          newAlerts.push({
-            id: 101,
-            type: 'warning',
-            title: 'Low Wind Output',
-            message: `Wind power is at ${energyData.wind.power}MW (below threshold of 40MW)`,
-            timestamp: new Date(),
-            source: 'Wind Sensor Array',
-            acknowledged: false
-          });
-        }
+        candidateAlerts.push({
+          ruleId: 101,
+          type: 'warning',
+          title: 'Low Wind Output',
+          message: `Wind power is at ${energyData.wind.power}MW (below threshold of 40MW)`,
+          timestamp: new Date(),
+          source: 'Wind Sensor Array',
+          acknowledged: false
+        });
       }
 
       if (energyData.total > 300) {
-        const existingAlert = alerts.find(a => a.id === 102);
-        if (!existingAlert) {
-          newAlerts.push({
-            id: 102,
-            type: 'success',
-            title: 'High Generation Peak',
-            message: `Total generation reached ${energyData.total}MW - exceeding expected capacity!`,
-            timestamp: new Date(),
-            source: 'Grid Monitor',
-            acknowledged: false
-          });
-        }
+        candidateAlerts.push({
+          ruleId: 102,
+          type: 'success',
+          title: 'High Generation Peak',
+          message: `Total generation reached ${energyData.total}MW - exceeding expected capacity!`,
+          timestamp: new Date(),
+          source: 'Grid Monitor',
+          acknowledged: false
+        });
       }
 
-      if (newAlerts.length > 0) {
-        setAlerts(prev => [...newAlerts, ...prev].slice(0, 20));
+      if (candidateAlerts.length > 0) {
+        setAlerts(prev => {
+          const existingRuleIds = new Set(
+            prev.map(a => a.ruleId).filter(Boolean)
+          );
+          const newAlerts = candidateAlerts
+            .filter(a => !existingRuleIds.has(a.ruleId))
+            .map(a => ({ ...a, id: createAlertId() }));
+
+          if (newAlerts.length === 0) return prev;
+          return [...newAlerts, ...prev].slice(0, 20);
+        });
       }
     };
 
     checkAlerts();
-  }, [energyData, alerts]);
+  }, [energyData]);
 
   const handleAcknowledge = (alertId) => {
     setAcknowledgedAlerts(prev => [...prev, alertId]);

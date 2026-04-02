@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { fetchOpenWeatherData } from '../services/apiService';
+import { useRealTimeData } from '../hooks/useRealTimeData';
 
 const GLOBAL_REGIONS = [
   { id: 'india', name: 'India (New Delhi)', lat: 28.6139, lon: 77.2090, bg: 'from-orange-400 to-red-500' },
@@ -15,7 +16,7 @@ const GlobalWeather = () => {
   const [weatherData, setWeatherData] = useState({});
   const [loadingObj, setLoadingObj] = useState({});
   const [lastUpdated, setLastUpdated] = useState(new Date());
-  const realTimeData = useRealTimeData();
+  useRealTimeData();
   const updateIntervalRef = useRef({});
 
   // Initialize real-time updates for all regions
